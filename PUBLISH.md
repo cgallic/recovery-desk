@@ -1,8 +1,13 @@
 # Publish checklist — one-shot public release
 
-This directory is the complete, push-ready repository for **The Recovery Desk**.
-It runs offline on a clean clone (`make demo` / `make test`, no API key). Publishing
-is a single mechanical step — nothing else needs to change.
+> **Status: PUBLISHED.** Live at https://github.com/cgallic/recovery-desk (public,
+> tagged `v1.0`). A clean clone has been re-verified: `pip install -e .` installs
+> all deps, the full test suite passes (incl. the live-path test), the headless
+> loop self-fails then ships at 100/100, and `demo/recovery-desk-demo.mp4` is
+> present in the clone. The commands below are kept as the reproducible record.
+
+This directory is the complete repository for **The Recovery Desk**.
+It runs offline on a clean clone (`make demo` / `make test`, no API key).
 
 ## What is already verified
 
@@ -24,13 +29,17 @@ git tag v1.0
 git push origin v1.0
 ```
 
-## Post-publish (paste two URLs)
+## Post-publish (one URL left to paste)
 
-1. Confirm a clean clone runs:
+1. Clean clone confirmed (done):
    ```bash
    git clone https://github.com/cgallic/recovery-desk /tmp/rd && cd /tmp/rd \
      && python -m venv .venv && .venv/bin/pip install -e . \
      && make test && make run
    ```
-2. Record the 80s demo per `../demo/video-script.md` against `make demo` (offline so the 66→100 beat is identical), upload to YouTube, set public.
-3. Paste the repo URL and the video URL into `submission/form-answers.md` and `config.json`.
+2. The demo VIDEO is already rendered and committed at `demo/recovery-desk-demo.mp4`
+   (re-render any time with `make video`). Upload that exact file to YouTube and set
+   it public — that is the only remaining manual step, because the lablab form's
+   video field wants a hosted watch URL.
+3. Paste the YouTube watch URL into `submission/form-answers.md` and `config.json`
+   (`demo.video_url`). The repo URL is already live.
