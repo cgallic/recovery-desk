@@ -1,0 +1,23 @@
+{
+  "call_id": "mc_20260707_0914",
+  "received_at": "2026-07-07T09:14:00-04:00",
+  "caller_name": "Dana Whitfield",
+  "caller_number": "+1-407-555-0162",
+  "reason": "Kitchen sink backing up, water pooling under the cabinet. Asked how soon someone could come out and roughly what it costs.",
+  "likely_objection": "Worried it'll be an expensive emergency call-out and that no one can come today.",
+  "business_profile": {
+    "name": "Bayfront Plumbing Co.",
+    "phone": "+1-407-555-0100",
+    "address": "212 Harbor Rd, Orlando, FL 32801",
+    "sla_window": "within the hour during business hours",
+    "hours": "Mon-Sat 7:00 AM - 7:00 PM",
+    "services": ["drain clearing", "leak repair", "emergency call-outs"],
+    "next_open_slots": ["today 2:00 PM", "today 4:30 PM", "tomorrow 9:00 AM"],
+    "economics": {
+      "avg_job_value": 320,
+      "recovery_conversion_rate": 0.35,
+      "currency": "USD",
+      "note": "Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery."
+    }
+  }
+}

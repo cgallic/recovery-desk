@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.db
+.env
+.venv/
+build/
+dist/
+*.egg-info/
+.DS_Store
+.benchmarks/
+.pytest_cache/
+
+# Demo VIDEO + cover + transcript are committed deliverables — keep them.
+!demo/recovery-desk-demo.mp4
+!demo/cover.png
+!demo/live-claude-run.md
+!demo/live-claude-run.json

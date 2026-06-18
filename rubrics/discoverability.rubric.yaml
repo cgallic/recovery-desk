@@ -1,0 +1,60 @@
+# Discoverability rubric — swap-proof #2 (third distinct self-failing domain).
+# Set RUBRIC=rubrics/discoverability.rubric.yaml and the SAME agent becomes a
+# local-listing auditor that grades a page before publishing. No code change.
+#
+# Like bookability and compliance, the agent's plain first draft does NOT clear
+# this bar: the recovery message carries no single primary call-to-action the
+# auditor recognizes (none of book/schedule/get-a-quote/call-us), so the agent
+# fails its own draft on `single_cta` (85/100 < 90), collapses to exactly one
+# "Book your slot." CTA, and re-scores to a pass. Proven by
+# test_third_domain_self_fails_then_passes_offline.
+
+name: discoverability
+description: >
+  Scores a local-business listing/landing page on how findable it is in search
+  and AI answer engines.
+domain: local listing pages
+threshold: 90
+max_revisions: 3
+
+lines:
+  - id: nap_consistency
+    weight: 20
+    method: deterministic
+    check: nap_consistency
+    pass_condition: "Business name, phone, address match the profile exactly."
+    fail_hint: "Fix NAP to match the profile."
+
+  - id: single_h1
+    weight: 15
+    method: deterministic
+    check: exactly_one_h1
+    pass_condition: "The page has exactly one H1."
+    fail_hint: "Use exactly one H1."
+
+  - id: answer_first
+    weight: 20
+    method: llm
+    pass_condition: "The first paragraph answers the page's core question in the first two sentences."
+    fail_hint: "Lead with the answer; move context below."
+
+  - id: single_cta
+    weight: 15
+    method: deterministic
+    check: exactly_one_cta
+    pass_condition: "Exactly one primary call-to-action."
+    fail_hint: "Reduce to one primary call-to-action."
+
+  - id: proof_density
+    weight: 30
+    method: deterministic
+    check: proof_density_ok
+    pass_condition: "At least one concrete number, statistic, or quoted detail appears (citation/quote density)."
+    fail_hint: "Add a concrete number, stat, or quoted detail."
+
+spam_blocklist: []
+cta_markers:
+  - "book"
+  - "call us"
+  - "get a quote"
+  - "schedule"

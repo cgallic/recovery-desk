@@ -1,0 +1,92 @@
+# Bookability rubric — the self-evaluation standard the agent grades itself against.
+# Six weighted lines. Every line is a checkable fact, not a prediction.
+# The agent ships when total >= threshold OR after max_revisions.
+#
+# Each line has a `method`:
+#   deterministic  -> scored by recovery_desk.grader with no LLM (string/regex/JSON)
+#   llm            -> scored by Claude with a strict pass/fail prompt (offline fallback exists)
+#
+# Swap this whole file (RUBRIC=rubrics/compliance.rubric.yaml) to repoint the agent
+# at a different domain with zero code changes.
+
+name: bookability
+description: >
+  Scores a missed-call recovery (callback message + recovery microsite) on how
+  likely it is to convert a missed call into a booked job at a local service business.
+domain: missed-call recovery
+threshold: 85
+max_revisions: 3
+
+lines:
+  - id: callback_sla
+    weight: 18
+    method: llm
+    pass_condition: >
+      The message promises contact within the business's stated SLA window
+      (e.g. "I'll call you back within the hour" / "before end of day").
+    fail_hint: "Add an explicit, time-bound callback promise inside the SLA window."
+
+  - id: concrete_slot
+    weight: 18
+    method: deterministic
+    check: time_slot_present
+    pass_condition: >
+      At least one SPECIFIC appointment time is offered (a day + a clock time),
+      not "let us know when works for you."
+    fail_hint: "Offer a specific time, e.g. 'tomorrow at 9:00 AM or 2:00 PM.'"
+
+  - id: objection_handled
+    weight: 16
+    method: llm
+    pass_condition: >
+      The caller's likely top objection (inferred from the call reason) is
+      pre-answered in one line.
+    fail_hint: "Name and disarm the caller's most likely hesitation in one sentence."
+
+  - id: contact_correct
+    weight: 18
+    method: deterministic
+    check: nap_consistency
+    pass_condition: >
+      Business name, phone, and address in the microsite exactly match the
+      business profile (NAP consistency).
+    fail_hint: "Fix the business name / phone / address to match the profile exactly."
+
+  - id: single_cta
+    weight: 15
+    method: deterministic
+    check: exactly_one_cta
+    pass_condition: >
+      Exactly one call-to-action across the message and the site. Zero or two-plus fails.
+    fail_hint: "Reduce to exactly one clear call-to-action."
+
+  - id: no_spam_words
+    weight: 15
+    method: deterministic
+    check: no_spam_words
+    pass_condition: >
+      No deliverability spam-trigger words from the blocklist appear in the message.
+    fail_hint: "Remove spam-trigger words (free, guarantee, act now, winner, urgent!!!)."
+
+spam_blocklist:
+  - "act now"
+  - "free!!!"
+  - "100% free"
+  - "guarantee"
+  - "winner"
+  - "click here"
+  - "urgent!!!"
+  - "limited time only"
+  - "risk-free"
+  - "cash bonus"
+
+# Single-CTA detection: the grader counts CTA-shaped phrases. Exactly one passes.
+cta_markers:
+  - "book"
+  - "schedule"
+  - "call us"
+  - "reply"
+  - "reserve"
+  - "confirm"
+  - "tap to"
+  - "click to"

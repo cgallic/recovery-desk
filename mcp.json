@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "bookability": {
+      "command": "python",
+      "args": ["-m", "recovery_desk.server"],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-...",
+        "RUBRIC": "rubrics/bookability.rubric.yaml"
+      }
+    }
+  }
+}

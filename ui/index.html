@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Recovery Desk — live</title>
+<style>
+  :root {
+    --bg:#0b0e13; --panel:#11151d; --border:#1e2530; --muted:#7c8794;
+    --text:#e8edf2; --green:#5ad19a; --red:#e2645b; --amber:#e2b85b; --accent:#6ea8fe;
+    --mono:'SFMono-Regular',Menlo,Consolas,monospace;
+    --sans:-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--panel);}
+  header h1{font-size:16px;letter-spacing:.5px;}
+  header .sub{font-size:12px;color:var(--muted);}
+  header .goal{font-family:var(--mono);font-size:12px;color:var(--accent);}
+  button#run{background:var(--green);color:#04110a;border:none;font-weight:700;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:13px;}
+  button#run:disabled{opacity:.5;cursor:default;}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 53px);}
+  .pane{padding:18px 20px;overflow-y:auto;}
+  .pane.left{border-right:1px solid var(--border);}
+  .pane h2{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px;}
+
+  /* Work product (left) */
+  .msg{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;font-size:14px;line-height:1.55;white-space:pre-wrap;margin-bottom:16px;}
+  .site{border:1px solid var(--border);border-radius:10px;overflow:hidden;height:300px;}
+  .site iframe{width:100%;height:100%;border:0;background:#0f1115;}
+
+  /* Ledger (right) */
+  .scoreboard{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+  .bigscore{font-family:var(--mono);font-size:54px;font-weight:700;line-height:1;transition:color .4s;}
+  .bigscore.fail{color:var(--red);} .bigscore.pass{color:var(--green);}
+  .bigscore.climbing{text-shadow:0 0 18px rgba(90,209,154,.55);}
+  @keyframes scorepulse{0%{transform:scale(1);}50%{transform:scale(1.08);}100%{transform:scale(1);}}
+  .bigscore.pulse{animation:scorepulse .5s ease-out;}
+  .thresh{font-size:13px;color:var(--muted);}
+  .verdict{font-family:var(--mono);font-size:13px;padding:3px 10px;border-radius:6px;margin-bottom:16px;display:inline-block;}
+  .verdict.fail{background:rgba(226,100,91,.15);color:var(--red);}
+  .verdict.pass{background:rgba(90,209,154,.15);color:var(--green);}
+
+  .lines{display:flex;flex-direction:column;gap:8px;}
+  .line{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:8px;padding:10px 12px;transition:border-color .4s,background .4s;}
+  .line.pass{border-left-color:var(--green);}
+  .line.fail{border-left-color:var(--red);background:rgba(226,100,91,.07);}
+  .line .id{font-family:var(--mono);font-size:13px;min-width:150px;}
+  .line .detail{font-size:12px;color:var(--muted);flex:1;}
+  .line .pts{font-family:var(--mono);font-size:13px;min-width:54px;text-align:right;}
+  .line.pass .pts{color:var(--green);} .line.fail .pts{color:var(--red);}
+
+  .revtabs{display:flex;gap:6px;margin-bottom:14px;}
+  .revtab{font-family:var(--mono);font-size:12px;padding:5px 11px;border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;}
+  .revtab.active{color:var(--text);border-color:var(--accent);}
+  .revtab.fail{color:var(--red);} .revtab.pass{color:var(--green);}
+
+  .feed{margin-top:18px;border-top:1px solid var(--border);padding-top:12px;}
+  .feed .ev{font-family:var(--mono);font-size:11px;color:var(--muted);padding:2px 0;}
+  .feed .ev b{color:var(--accent);}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>The Recovery Desk</h1>
+    <div class="sub">An agent that recovers a missed call — and grades its own work until it passes.</div>
+  </div>
+  <div class="goal" id="goal">goal: 1 missed call</div>
+  <button id="run">Give it the goal &rarr;</button>
+</header>
+
+<div class="split">
+  <section class="pane left">
+    <h2>Work product — what the agent is writing</h2>
+    <div class="msg" id="message">Press &ldquo;Give it the goal&rdquo; to start. The agent receives one missed-call record and runs autonomously from there.</div>
+    <div class="site"><iframe id="site" title="recovery microsite"></iframe></div>
+  </section>
+
+  <section class="pane right">
+    <h2>Self-evaluation ledger — the agent grading itself</h2>
+    <div class="revtabs" id="revtabs"></div>
+    <div class="scoreboard">
+      <div class="bigscore" id="bigscore">--</div>
+      <div class="thresh" id="thresh"></div>
+    </div>
+    <div class="verdict" id="verdict" style="display:none;"></div>
+    <div class="lines" id="lines"></div>
+    <div class="feed" id="feed"></div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let poll = null;
+let activeRev = null;     // which revision the user is viewing; null = follow latest
+let shownScore = null;    // the number currently painted in the big score element
+let scoreTween = null;    // active count-up animation handle
+
+function lineLabel(id){ return id; }
+
+// Animate the big score from its current painted value to `target` IN PLACE —
+// the single number climbs (66 -> 100), it does not snap when a tab switches.
+// `snap` forces an immediate set (used when the user clicks a revision tab).
+function setScore(target, passed, snap){
+  const sc = $("bigscore");
+  const base = "bigscore " + (passed ? "pass" : "fail");
+  if(scoreTween){ cancelAnimationFrame(scoreTween); scoreTween = null; }
+  if(snap || shownScore === null || shownScore === target){
+    shownScore = target;
+    sc.textContent = target;
+    sc.className = base;
+    return;
+  }
+  const from = shownScore, to = target, dur = 900, t0 = performance.now();
+  sc.className = base + " climbing";
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);           // ease-out cubic
+    sc.textContent = Math.round(from + (to - from) * eased);
+    if(p < 1){ scoreTween = requestAnimationFrame(step); }
+    else {
+      shownScore = to;
+      sc.textContent = to;
+      sc.className = base + " pulse";               // land with a pulse
+      scoreTween = null;
+    }
+  };
+  scoreTween = requestAnimationFrame(step);
+}
+
+function render(state, tabClick){
+  $("goal").textContent = "goal: 1 missed call · rubric: " + (state.rubric || "");
+  const revs = state.revisions || [];
+  // revision tabs
+  $("revtabs").innerHTML = revs.map(r =>
+    `<div class="revtab ${r.passed?'pass':'fail'} ${ (activeRev===null? r.revision===revs.length-1 : r.revision===activeRev)?'active':''}"
+          data-rev="${r.revision}">rev ${r.revision} · ${r.total}</div>`).join("");
+  document.querySelectorAll(".revtab").forEach(t =>
+    t.onclick = () => { activeRev = parseInt(t.dataset.rev); render(state, true); });
+
+  const followingLatest = (activeRev===null);
+  const show = followingLatest
+      ? revs[revs.length-1]
+      : revs.find(r => r.revision===activeRev) || revs[revs.length-1];
+
+  if(show){
+    $("message").textContent = show.message || "";
+    $("site").srcdoc = show.site_html || "";
+    // Snap when a tab was clicked (tabClick) or when viewing a non-latest rev;
+    // animate in place when the live loop lands a new score while following latest.
+    setScore(show.total, show.passed, !!tabClick || !followingLatest);
+    $("thresh").textContent = "/ 100   (ship at " + state.threshold + ")";
+    const v = $("verdict");
+    v.style.display = "inline-block";
+    v.className = "verdict " + (show.passed ? "pass" : "fail");
+    v.textContent = show.passed ? "PASS — agent ships this" : "FAIL — agent rejects its own draft";
+    $("lines").innerHTML = (show.lines||[]).map(l =>
+      `<div class="line ${l.passed?'pass':'fail'}">
+         <div class="id">${lineLabel(l.line_id)}</div>
+         <div class="detail">${l.detail||""}</div>
+         <div class="pts">${l.points}/${l.weight}</div>
+       </div>`).join("");
+  }
+
+  $("feed").innerHTML = (state.log||[]).slice(-8).map(e =>
+    `<div class="ev"><b>${e.actor}</b> — ${e.action}</div>`).join("");
+
+  const terminal = state.state === "shipped_pass" || state.state === "shipped_cap";
+  if(terminal){
+    clearInterval(poll); poll = null;
+    $("run").disabled = false;
+    $("run").textContent = "Run again";
+    activeRev = null;
+  }
+}
+
+async function tick(){
+  try{
+    const r = await fetch("/api/state");
+    render(await r.json());
+  }catch(e){ /* keep polling */ }
+}
+
+$("run").onclick = async () => {
+  $("run").disabled = true; $("run").textContent = "Running…";
+  activeRev = null;
+  shownScore = null;        // first score of a fresh run paints immediately, then climbs
+  await fetch("/api/run", {method:"POST"});
+  if(poll) clearInterval(poll);
+  poll = setInterval(tick, 600);
+  tick();
+};
+</script>
+</body>
+</html>

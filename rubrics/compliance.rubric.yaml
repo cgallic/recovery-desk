@@ -1,0 +1,62 @@
+# Compliance rubric — swap-proof #1.
+# Demonstrates the rubric is separable: set RUBRIC=rubrics/compliance.rubric.yaml
+# and the SAME agent becomes a regulated-message compliance checker. No code change.
+
+name: compliance
+description: >
+  Scores an outbound message for a regulated industry (e.g. a clinic appointment
+  reminder) on whether it is safe to send.
+domain: regulated outbound messaging
+threshold: 90
+max_revisions: 3
+
+lines:
+  - id: opt_out_present
+    weight: 25
+    method: deterministic
+    check: opt_out_present
+    pass_condition: "The message contains a clear opt-out instruction (e.g. 'reply STOP to unsubscribe')."
+    fail_hint: "Add an explicit opt-out line."
+
+  - id: no_sensitive_data
+    weight: 30
+    method: deterministic
+    check: no_sensitive_data
+    pass_condition: "No sensitive personal data (diagnosis, account numbers, full DOB) appears in the body."
+    fail_hint: "Remove sensitive personal data from the message body."
+
+  - id: safe_language
+    weight: 20
+    method: llm
+    pass_condition: "Language makes no medical/financial claim that requires disclosure or disclaimer."
+    fail_hint: "Soften or qualify any claim that would require a disclaimer."
+
+  - id: reading_level
+    weight: 10
+    method: deterministic
+    check: reading_level_ok
+    pass_condition: "The message reads at roughly 8th-grade level or simpler (short sentences)."
+    fail_hint: "Shorten sentences; simplify vocabulary."
+
+  - id: single_cta
+    weight: 15
+    method: deterministic
+    check: exactly_one_cta
+    pass_condition: "Exactly one call-to-action."
+    fail_hint: "Reduce to exactly one call-to-action."
+
+spam_blocklist: []
+cta_markers:
+  - "confirm"
+  - "reply"
+  - "call"
+  - "reschedule"
+sensitive_patterns:
+  - "diagnosis"
+  - "account number"
+  - "ssn"
+  - "social security"
+opt_out_markers:
+  - "reply stop"
+  - "unsubscribe"
+  - "opt out"

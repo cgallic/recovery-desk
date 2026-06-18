@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recovery-desk"
+version = "1.0.0"
+description = "An autonomous agent that recovers a missed call into a booked job and grades its own work against a numeric Bookability rubric. Ships bookability-mcp."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Connor Gallic" }]
+keywords = ["mcp", "anthropic", "claude", "autonomous-agent", "self-evaluation", "self-improvement"]
+
+dependencies = [
+    "pyyaml>=6.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "mcp[cli]>=1.2",
+    "anthropic>=0.40",
+]
+
+# Only needed to RE-RENDER the demo video from source (make video). The shipped
+# demo/recovery-desk-demo.mp4 is already in the repo, so installing these is
+# optional for judges. ffmpeg must also be on PATH for encoding.
+[project.optional-dependencies]
+video = ["playwright>=1.40"]
+
+[project.scripts]
+recovery-desk = "recovery_desk.run:main"
+bookability-mcp = "recovery_desk.server:main"
+recovery-desk-video = "recovery_desk.record_demo:main"
+
+[project.urls]
+Homepage = "https://github.com/cgallic/recovery-desk"
+
+[tool.setuptools]
+packages = ["recovery_desk"]
