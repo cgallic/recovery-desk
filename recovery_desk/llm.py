@@ -26,6 +26,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import subprocess
 from typing import Callable, List, Optional, Tuple
 
 # Anthropic's current Opus-tier model. Override with RECOVERY_DESK_MODEL if you
@@ -53,10 +55,27 @@ def _record(entry: dict) -> None:
 
 
 def is_live() -> bool:
-    """True when a real Claude client is available (ANTHROPIC_API_KEY set and the
-    anthropic SDK importable). The agent log surfaces this so a judge can see
+    """True when a real Claude client is available — either ANTHROPIC_API_KEY +
+    the anthropic SDK, or the real model via the Claude Code CLI when
+    RECOVERY_DESK_CLAUDE_CLI=1. The agent log surfaces this so a judge can see
     which path actually ran."""
     return _client() is not None
+
+
+def live_reasoner_label() -> str:
+    """A short label for which live reasoner is wired, for the ledger/transcript:
+    'claude-api', 'claude-cli', 'stub', or 'offline-deterministic'."""
+    if _CLIENT_OVERRIDE is not None:
+        return "claude-live-stub" if isinstance(_CLIENT_OVERRIDE, LiveReasonerStub) else "claude-override"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        try:
+            import anthropic  # noqa: F401
+            return "claude-api"
+        except ImportError:
+            pass
+    if _cli_enabled():
+        return "claude-cli"
+    return "offline-deterministic"
 
 # The agent sets this to the rubric it is currently grading against, so the
 # offline reviser repairs THAT rubric's failing lines (e.g. uses the right
@@ -164,17 +183,94 @@ class LiveReasonerStub:
         self.messages = _StubMessages(sink)
 
 
+# ---------------------------------------------------------------------------
+# Real Claude via the Claude Code CLI (`claude -p`).
+#
+# Not everyone has an ANTHROPIC_API_KEY exported, but anyone running this in a
+# Claude Code environment already has authenticated access to the real model
+# through the `claude` CLI. This client shells out to `claude -p` (headless print
+# mode) and returns the model's actual text — same `messages.create(...).content
+# [0].text` shape the SDK uses, so the live branch in draft_recovery /
+# llm_judge_line runs UNCHANGED against the real model. This is what lets
+# capture_live_run.py record Claude's OWN reviser prose with no API key.
+#
+# It is genuinely the live model (not the stub): the request carries the real
+# system + user prompt and the response is whatever Claude writes. Disabled by
+# default for byte-for-byte demo reproducibility; enabled with
+# RECOVERY_DESK_CLAUDE_CLI=1 (or the --live-cli flags on demo/capture).
+# ---------------------------------------------------------------------------
+
+class _CliMessages:
+    """messages.create() that drives the real model through `claude -p`."""
+
+    def __init__(self, cli: str, model: Optional[str]):
+        self._cli = cli
+        self._model = model
+
+    def create(self, *, model, max_tokens, system, messages):
+        user = messages[0]["content"]
+        prompt = (
+            f"{system}\n\n"
+            "Respond with ONLY the requested output. No preamble, no code fences.\n\n"
+            f"{user}"
+        )
+        cmd = [self._cli, "-p"]
+        if self._model:
+            cmd += ["--model", self._model]
+        proc = subprocess.run(
+            cmd, input=prompt, capture_output=True, text=True,
+            encoding="utf-8", timeout=180,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"claude CLI failed (exit {proc.returncode}): "
+                f"{(proc.stderr or '').strip()[:300]}"
+            )
+        return _StubResponse(proc.stdout.strip())
+
+
+class ClaudeCliClient:
+    """A real Claude client backed by the Claude Code CLI (no API key needed).
+
+    Speaks the SDK's `.messages.create(...)` interface so the existing live code
+    path consumes it without changes. Used when RECOVERY_DESK_CLAUDE_CLI is set
+    and the `claude` binary is on PATH.
+    """
+
+    def __init__(self, cli: Optional[str] = None, model: Optional[str] = None):
+        resolved = cli or shutil.which("claude")
+        if not resolved:
+            raise RuntimeError("claude CLI not found on PATH")
+        self.messages = _CliMessages(resolved, model)
+
+
+def _cli_enabled() -> bool:
+    """True when the operator opted into the real Claude CLI reasoner and the
+    binary is available. Opt-in so the default demo stays reproducible."""
+    flag = os.environ.get("RECOVERY_DESK_CLAUDE_CLI", "").strip().lower()
+    if flag not in ("1", "true", "yes", "on"):
+        return False
+    return shutil.which("claude") is not None
+
+
 def _client():
     if _CLIENT_OVERRIDE is not None:
         return _CLIENT_OVERRIDE
     key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        return None
-    try:
-        import anthropic
-        return anthropic.Anthropic(api_key=key)
-    except ImportError:
-        return None
+    if key:
+        try:
+            import anthropic
+            return anthropic.Anthropic(api_key=key)
+        except ImportError:
+            pass
+    # No usable SDK key — fall back to the real model via the Claude Code CLI
+    # when the operator opted in. Still the live model, no API key.
+    if _cli_enabled():
+        model = os.environ.get("RECOVERY_DESK_MODEL")
+        # CLI uses its own model aliases; pass through only if it looks like one.
+        cli_model = model if model and not model.startswith("claude-opus-4") else None
+        return ClaudeCliClient(model=cli_model)
+    return None
 
 
 def _extract_json(text: str) -> dict:
@@ -182,7 +278,17 @@ def _extract_json(text: str) -> dict:
         text = text.split("```json", 1)[1].split("```", 1)[0]
     elif "```" in text:
         text = text.split("```", 1)[1].split("```", 1)[0]
-    return json.loads(text.strip())
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # A real model occasionally adds a line of prose around the object. Fall
+        # back to the first balanced {...} span so the live path stays robust.
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end > start:
+            return json.loads(text[start:end + 1])
+        raise
 
 
 def _parse_fail_hints(fail_hints: Optional[List[str]]) -> List[Tuple[str, str]]:

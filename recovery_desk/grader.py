@@ -21,10 +21,20 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from recovery_desk import miniyaml
+
 try:
-    import yaml  # PyYAML
-except ImportError:  # pragma: no cover - install guard
+    import yaml  # PyYAML (optional — a stdlib-only fallback ships in miniyaml.py)
+except ImportError:  # pragma: no cover - exercised only on a no-deps clone
     yaml = None
+
+
+def _load_yaml(text: str) -> dict:
+    """Read a rubric YAML. Prefer PyYAML; fall back to the vendored stdlib-only
+    reader so the core loop (selftest/demo/run) closes with zero installs."""
+    if yaml is not None:
+        return yaml.safe_load(text)
+    return miniyaml.safe_load(text)
 
 
 # ---------------------------------------------------------------------------
@@ -58,9 +68,7 @@ class Rubric:
 
 
 def load_rubric(path: str | Path) -> Rubric:
-    if yaml is None:
-        raise RuntimeError("PyYAML is required: pip install pyyaml")
-    data = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    data = _load_yaml(Path(path).read_text(encoding="utf-8"))
     lines = [
         RubricLine(
             id=l["id"],

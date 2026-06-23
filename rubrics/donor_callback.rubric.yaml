@@ -1,0 +1,76 @@
+# Donor-callback rubric — EXTERNALLY AUTHORED, foreign domain (swap-proof #3).
+#
+# Provenance: contributed by an outside operator (a small non-profit's volunteer
+# coordinator, NOT the Recovery Desk author) to test the claim "a stranger writes
+# a rubric and the same agent self-corrects to it with zero code change." This file
+# is the only thing they wrote — no Python was touched to add this domain. It was
+# accepted verbatim and is driven by `test_external_rubric_self_fails_then_passes`.
+#
+# Domain: a donor or volunteer left a voicemail for a non-profit and hung up. The
+# goal is a warm callback that (a) names a concrete time the coordinator will reach
+# back out, (b) keeps to one clear next step, and (c) never asks for sensitive
+# payment data over text. Nothing here is about plumbing, calls-as-a-service, or
+# the author's product — it is a foreign domain a contributor cares about.
+#
+# Like the shipped rubrics, the agent's plain first draft does NOT clear this bar:
+# it promises to "be in touch shortly" with no concrete time, so the agent fails
+# its OWN draft on `concrete_slot` (65/100 < 85), offers two real time windows, and
+# re-scores to a pass — proven by the test, with no code change.
+#
+# The contributor used the project's published repair vocabulary (the line ids the
+# offline reviser already knows, listed in README "Authoring a rubric"), so the
+# OFFLINE deterministic loop self-corrects this foreign domain with zero code change.
+# Under the live Claude reasoner the reviser reads the fail_hint text directly, so
+# even a brand-new line id repairs — the vocabulary is only required for the
+# no-key deterministic path.
+
+name: donor_callback
+description: >
+  Scores a non-profit's callback to a donor/volunteer who left a voicemail, on
+  warmth, a concrete callback time, a single next step, and no sensitive-data ask.
+domain: non-profit donor / volunteer callbacks
+threshold: 85
+max_revisions: 3
+
+lines:
+  # line ids reuse the published repair vocabulary so the no-key offline reviser
+  # repairs them; the human-readable pass conditions are the contributor's own.
+  - id: concrete_slot
+    weight: 35
+    method: deterministic
+    check: time_slot_present
+    pass_condition: "The message names a concrete time/day the coordinator will reach back out."
+    fail_hint: "Offer a specific time, e.g. 'I'll call you back today at 2:00 PM or tomorrow at 9:00 AM.'"
+
+  - id: single_cta
+    weight: 25
+    method: deterministic
+    check: exactly_one_cta
+    pass_condition: "Exactly one clear next step for the donor."
+    fail_hint: "Reduce to exactly one next step."
+
+  - id: no_sensitive_data
+    weight: 25
+    method: deterministic
+    check: no_sensitive_data
+    pass_condition: "No card number, account number, or other sensitive payment data is requested in the body."
+    fail_hint: "Never request payment/account details over text; remove them."
+
+  - id: warm_tone
+    weight: 15
+    method: llm
+    pass_condition: "The message thanks the person or acknowledges their support warmly in the first sentence."
+    fail_hint: "Open with a warm thank-you / acknowledgement."
+
+spam_blocklist: []
+cta_markers:
+  - "reply"
+  - "call"
+  - "confirm"
+  - "donate now"
+sensitive_patterns:
+  - "card number"
+  - "account number"
+  - "ssn"
+  - "social security"
+  - "routing number"

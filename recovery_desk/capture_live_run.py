@@ -117,7 +117,15 @@ def main(argv: list[str]) -> int:
         help="Run the identical live branch through the shared LiveReasonerStub "
              "(no API key). Records an honest stub transcript marked "
              "'claude-live-stub' — never a fabricated real-API capture.")
+    ap.add_argument(
+        "--live-cli", action="store_true",
+        help="Use the REAL Claude model via the Claude Code CLI (`claude -p`), no "
+             "API key required. Records Claude's own prose. Equivalent to setting "
+             "RECOVERY_DESK_CLAUDE_CLI=1.")
     args = ap.parse_args(argv[1:])
+
+    if args.live_cli:
+        os.environ["RECOVERY_DESK_CLAUDE_CLI"] = "1"
 
     reasoner_label = llm.MODEL
     if args.stub:
@@ -126,6 +134,8 @@ def main(argv: list[str]) -> int:
         # never confused with a real keyed capture.
         llm.set_client_override(llm.LiveReasonerStub())
         reasoner_label = f"{llm.MODEL}-stub"
+    elif llm.live_reasoner_label() == "claude-cli":
+        reasoner_label = f"{llm.MODEL} (Claude Code CLI)"
 
     if not llm.is_live():
         print(
@@ -164,7 +174,8 @@ def main(argv: list[str]) -> int:
     payload = {
         "captured_at": datetime.now(timezone.utc).isoformat(),
         "model": reasoner_label,
-        "reasoner": "claude-live-stub" if args.stub else "claude",
+        "reasoner": ("claude-live-stub" if args.stub
+                     else llm.live_reasoner_label()),
         "stub": bool(args.stub),
         "rubric": snap.get("rubric"),
         "transcript": transcript,

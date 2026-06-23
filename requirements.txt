@@ -1,0 +1,5 @@
+# The Vercel functions (api/run.py, api/agent.py) are STDLIB-ONLY:
+# - the recovery_desk engine reads rubric YAML via the vendored miniyaml.py when
+#   PyYAML is absent, so the deterministic loop closes with nothing installed;
+# - api/agent.py calls the model over urllib (Anthropic/Gemini REST), no SDK.
+# Intentionally empty so cold starts stay fast and the build never breaks on deps.

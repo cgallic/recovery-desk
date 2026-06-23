@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Recovery Desk — an agent that grades its own work until it passes</title>
+<style>
+  :root{
+    --bg:#0b0e13;--panel:#11151d;--line:#1e2530;--mut:#7c8794;--ink:#e8edf2;
+    --green:#5ad19a;--red:#e2645b;--amber:#e2b85b;--blue:#6ea8fe;
+    --mono:'SFMono-Regular',Menlo,Consolas,monospace;
+    --sans:-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);min-height:100vh}
+  header{max-width:1080px;margin:0 auto;padding:26px 22px 8px}
+  h1{font-size:22px;margin:0 0 6px}
+  .sub{color:var(--mut);font-size:13.5px;line-height:1.55}
+  .sub code{color:var(--blue);font-family:var(--mono)}
+  .red{color:var(--red)}
+  main{max-width:1080px;margin:0 auto;padding:12px 22px 64px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+  button{border:0;border-radius:9px;padding:11px 18px;font:inherit;font-weight:800;cursor:pointer}
+  #run{background:var(--green);color:#04110a}
+  #runai{background:var(--blue);color:#05101f}
+  button:disabled{opacity:.5;cursor:wait}
+  .pills{margin:10px 0 4px}
+  .pill{display:inline-block;font-size:11px;padding:2px 9px;border:1px solid var(--line);border-radius:20px;color:var(--mut);margin-right:6px}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+  @media(max-width:820px){.split{grid-template-columns:1fr}}
+  .pane{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-height:120px}
+  .pane h2{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--mut);margin-bottom:12px}
+
+  .msg{background:#0d1119;border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;line-height:1.55;white-space:pre-wrap;margin-bottom:14px;min-height:60px}
+  .site{border:1px solid var(--line);border-radius:10px;overflow:hidden;height:280px;background:#0f1115}
+  .site iframe{width:100%;height:100%;border:0;background:#fff}
+
+  .scoreboard{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+  .bigscore{font-family:var(--mono);font-size:52px;font-weight:700;line-height:1;transition:color .4s}
+  .bigscore.fail{color:var(--red)} .bigscore.pass{color:var(--green)}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+  .bigscore.pulse{animation:pulse .5s ease-out}
+  .thresh{font-size:13px;color:var(--mut)}
+  .verdict{font-family:var(--mono);font-size:12.5px;padding:3px 10px;border-radius:6px;margin:8px 0 14px;display:none}
+  .verdict.fail{background:rgba(226,100,91,.15);color:var(--red);display:inline-block}
+  .verdict.pass{background:rgba(90,209,154,.15);color:var(--green);display:inline-block}
+  .revtabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .revtab{font-family:var(--mono);font-size:12px;padding:5px 11px;border:1px solid var(--line);border-radius:6px;color:var(--mut);cursor:pointer}
+  .revtab.active{color:var(--ink);border-color:var(--blue)}
+  .revtab.fail{color:var(--red)} .revtab.pass{color:var(--green)}
+  .lines{display:flex;flex-direction:column;gap:7px}
+  .line{display:flex;align-items:center;gap:10px;background:#0d1119;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:8px;padding:9px 11px;transition:border-color .35s,background .35s}
+  .line.pass{border-left-color:var(--green)}
+  .line.fail{border-left-color:var(--red);background:rgba(226,100,91,.07)}
+  .line .id{font-family:var(--mono);font-size:12.5px;min-width:140px}
+  .line .detail{font-size:11.5px;color:var(--mut);flex:1}
+  .line .pts{font-family:var(--mono);font-size:12.5px;min-width:50px;text-align:right}
+  .line.pass .pts{color:var(--green)} .line.fail .pts{color:var(--red)}
+  .impact{margin-top:14px;font-size:12.5px;color:var(--amber);font-family:var(--mono)}
+
+  /* AI transcript panel */
+  #ai{margin-top:18px;display:none}
+  #ai.show{display:block}
+  .meta{font-family:var(--mono);font-size:12px;color:var(--mut);margin-bottom:10px}
+  .meta b{color:var(--blue)}
+  .step{border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin:7px 0;background:#0d1119;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s}
+  .step.in{opacity:1;transform:none}
+  .step .hd{font-family:var(--mono);font-size:12px;margin-bottom:4px}
+  .step.tool .hd{color:var(--blue)}
+  .step.say .hd{color:var(--amber)}
+  .step .bd{font-size:12px;color:var(--mut);white-space:pre-wrap;word-break:break-word}
+  .gatehit{color:var(--red);font-weight:700}
+  .err{color:var(--red);font-family:var(--mono);font-size:12.5px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>The Recovery Desk</h1>
+  <div class="sub">A small business missed a call. An autonomous agent writes the callback recovery + a branded microsite, then <strong>grades its own work</strong> against a numeric Bookability rubric:
+  <code>build</code> → <code>score</code> → <span class="red">FAIL (~66/100)</span> → revise only the failing lines → <code>re-score</code> → <span style="color:var(--green)">PASS</span> → book. The agent owns its own stopping condition.</div>
+  <div class="btns">
+    <button id="run">▶ Run the loop (deterministic)</button>
+    <button id="runai">✦ Run with REAL AI</button>
+  </div>
+  <div class="pills">
+    <span class="pill" id="p-status">idle</span>
+    <span class="pill" id="p-rev">revisions: —</span>
+    <span class="pill" id="p-gate">gate: —</span>
+  </div>
+</header>
+
+<main>
+  <div class="split">
+    <section class="pane">
+      <h2>Work product — what the agent shipped</h2>
+      <div class="msg" id="message">Press a button to give the agent one missed-call record. It runs autonomously from there.</div>
+      <div class="site"><iframe id="site" title="recovery microsite"></iframe></div>
+      <div class="impact" id="impact"></div>
+    </section>
+    <section class="pane">
+      <h2>Self-evaluation ledger — the agent grading itself</h2>
+      <div class="revtabs" id="revtabs"></div>
+      <div class="scoreboard"><div class="bigscore" id="bigscore">--</div><div class="thresh" id="thresh"></div></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="lines" id="lines"></div>
+    </section>
+  </div>
+
+  <section class="pane" id="ai">
+    <h2>Real model — autonomously driving the engine ops as tools</h2>
+    <div class="meta" id="aimeta"></div>
+    <div id="aierr" class="err"></div>
+    <div id="aifeed"></div>
+  </section>
+</main>
+
+<script>
+const $=(id)=>document.getElementById(id);
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let shown=null, tween=null;
+
+function setScore(target,passed,snap){
+  const sc=$("bigscore"), base="bigscore "+(passed?"pass":"fail");
+  if(tween){cancelAnimationFrame(tween);tween=null;}
+  if(snap||shown===null||shown===target){shown=target;sc.textContent=target;sc.className=base;return;}
+  const from=shown,to=target,dur=850,t0=performance.now();
+  const step=(now)=>{const p=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-p,3);
+    sc.textContent=Math.round(from+(to-from)*e);
+    if(p<1){tween=requestAnimationFrame(step);}else{shown=to;sc.textContent=to;sc.className=base+" pulse";tween=null;}};
+  tween=requestAnimationFrame(step);
+}
+
+function renderRev(rev,snap){
+  $("message").textContent=rev.message||"";
+  $("site").srcdoc=rev.site_html||"";
+  $("thresh").textContent="/ 100   (ship at "+snap.threshold+")";
+  const v=$("verdict"); v.className="verdict "+(rev.passed?"pass":"fail");
+  v.textContent=rev.passed?"PASS — the agent ships this":"FAIL — the agent rejects its own draft, revises";
+  $("lines").innerHTML=(rev.lines||[]).map(l=>
+    `<div class="line ${l.passed?'pass':'fail'}"><div class="id">${esc(l.line_id)}</div>`+
+    `<div class="detail">${esc(l.detail||"")}</div><div class="pts">${l.points}/${l.weight}</div></div>`).join("");
+}
+
+function buildTabs(snap,active){
+  const revs=snap.revisions||[];
+  $("revtabs").innerHTML=revs.map((r,i)=>
+    `<div class="revtab ${r.passed?'pass':'fail'} ${i===active?'active':''}" data-i="${i}">rev ${r.revision} · ${r.total}</div>`).join("");
+  document.querySelectorAll(".revtab").forEach(t=>t.onclick=()=>{
+    const i=+t.dataset.i; buildTabs(snap,i); setScore(snap.revisions[i].total,snap.revisions[i].passed,true); renderRev(snap.revisions[i],snap);
+  });
+}
+
+$("run").addEventListener("click", async ()=>{
+  const b1=$("run"),b2=$("runai"); b1.disabled=b2.disabled=true;
+  $("ai").classList.remove("show"); $("p-status").textContent="running…"; $("p-gate").textContent="gate: —";
+  $("impact").textContent=""; shown=null;
+  try{
+    const data=await (await fetch("/api/run",{method:"POST"})).json();
+    if(!data.ok) throw new Error(data.error||"run failed");
+    const revs=data.revisions||[];
+    $("p-rev").textContent="revisions: "+revs.length;
+    for(let i=0;i<revs.length;i++){
+      buildTabs(data,i); setScore(revs[i].total,revs[i].passed,i===0); renderRev(revs[i],data);
+      if(!revs[i].passed){$("p-gate").textContent="gate: BLOCKED (self-reject)";}
+      await sleep(i===0?1500:1100);
+    }
+    $("p-status").textContent=data.state==="shipped_pass"?"shipped ✓":"shipped (cap)";
+    $("p-gate").textContent="gate: passed ✓";
+    if(data.impact&&data.impact.basis){$("impact").textContent="Recovered revenue (claimed only on a passing ship): "+data.impact.basis;}
+  }catch(e){$("p-status").textContent="error"; $("message").textContent="Error: "+e.message;}
+  finally{b1.disabled=b2.disabled=false;}
+});
+
+$("runai").addEventListener("click", async ()=>{
+  const b1=$("run"),b2=$("runai"); b1.disabled=b2.disabled=true;
+  $("ai").classList.add("show"); $("aifeed").innerHTML=""; $("aierr").textContent="";
+  $("aimeta").textContent="calling the model…"; $("p-status").textContent="real AI running…";
+  try{
+    const data=await (await fetch("/api/agent",{method:"POST"})).json();
+    if(!data.ok){
+      if(data.reason==="no_key"){
+        $("aimeta").innerHTML="No model key on this deployment — falling back to the deterministic loop.";
+        $("p-status").textContent="no key — running deterministic";
+        b1.disabled=b2.disabled=false; $("run").click(); return;
+      }
+      $("aierr").textContent="["+(data.reason||"error")+"] "+(data.message||data.error||"");
+      $("p-status").textContent="ai error";
+    } else {
+      const u=data.usage||{};
+      $("aimeta").innerHTML=`provider <b>${esc(data.provider)}</b> · model <b>${esc(data.model)}</b> · `+
+        `<b>${data.turns}</b> tool rounds · tokens in <b>${u.input_tokens||0}</b> / out <b>${u.output_tokens||0}</b> — real API call`;
+      const tr=data.transcript||[];
+      for(const s of tr){
+        const el=document.createElement("div");
+        if(s.tool){
+          el.className="step tool";
+          const r=s.result||{};
+          let tail="";
+          if("total" in r) tail=` → ${r.total}/100 ${r.passed?"PASS":"<span class='gatehit'>FAIL</span>"}`;
+          else if("state" in r) tail=` → ${esc(r.state||"")} ${r.final_score!=null?("("+r.final_score+"/100)"):""} ${r.booked?"· booked "+esc(r.booked_slot||""):""}`;
+          else if("dry_run" in r) tail=` → ${r.note?esc(r.note):""}`;
+          el.innerHTML=`<div class="hd">tool · ${esc(s.tool)}${tail}</div>`+
+            `<div class="bd">in: ${esc(JSON.stringify(s.input).slice(0,160))}</div>`;
+        } else {
+          el.className="step say";
+          el.innerHTML=`<div class="hd">model reasoning</div><div class="bd">${esc(s.text)}</div>`;
+        }
+        $("aifeed").appendChild(el);
+        requestAnimationFrame(()=>el.classList.add("in"));
+        await sleep(650);
+      }
+      // render the genuine artifact the model produced through the tools
+      const a=data.artifacts||{};
+      if(a.shipped_message) $("message").textContent=a.shipped_message;
+      if(a.shipped_site_html) $("site").srcdoc=a.shipped_site_html;
+      if(a.final_score!=null){setScore(a.final_score,a.state==="shipped_pass",false);$("thresh").textContent="/ 100";}
+      $("p-status").textContent=a.booked?"booked ✓ (real AI)":"ran (real AI)";
+      $("p-gate").textContent=a.state==="shipped_pass"?"gate: passed ✓":"gate: —";
+      if(a.impact&&a.impact.basis) $("impact").textContent="Recovered revenue: "+a.impact.basis;
+    }
+  }catch(e){$("aierr").textContent="Error: "+e.message; $("p-status").textContent="error";}
+  finally{b1.disabled=b2.disabled=false;}
+});
+</script>
+</body>
+</html>

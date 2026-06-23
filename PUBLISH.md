@@ -12,8 +12,9 @@ It runs offline on a clean clone (`make demo` / `make test`, no API key).
 ## What is already verified
 
 - `pip install -e .` installs all deps (pyyaml, fastapi, uvicorn, mcp[cli], anthropic) on a fresh venv.
-- `make test` passes (grader, blackboard, end-to-end loop, fail-hint-driven reviser, second-domain self-fail).
-- `make run` closes the loop headless on all three rubrics.
+- `make test` passes (grader, blackboard, end-to-end loop, fail-hint-driven reviser, second/third-domain self-fail, externally-authored-rubric self-fail, live-Claude path).
+- `make run` closes the loop headless on all four rubrics (incl. the externally-authored `donor_callback`).
+- `make demo-live` runs the loop with the REAL Claude model via the Claude Code CLI (no API key); the captured transcript is committed at `demo/live-claude-run.md`.
 - `make demo` serves the live split-screen ledger UI; `make demo-replay` writes the standalone playable demos in `demo/`.
 - `bookability-mcp` (the MCP server) imports and every tool is callable.
 - No secrets, db files, or caches are tracked (see `.gitignore`).

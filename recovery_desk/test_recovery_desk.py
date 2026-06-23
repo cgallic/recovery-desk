@@ -165,6 +165,41 @@ def test_third_domain_self_fails_then_passes_offline():
           f"{f0['single_cta']['points']} -> {f1['single_cta']['points']}")
 
 
+def test_external_rubric_self_fails_then_passes():
+    """A rubric AUTHORED BY AN OUTSIDE CONTRIBUTOR, in a foreign domain (non-profit
+    donor/volunteer callbacks — unrelated to the author's product), drives a real
+    self-fail-then-pass with ZERO code change. This is the stranger-contributed
+    proof for novelty: only a YAML file was added; the same loop reads it, fails
+    its own first draft on `concrete_slot`, repairs it, and ships a pass."""
+    goal = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    rubric = REPO / "rubrics" / "donor_callback.rubric.yaml"
+    assert rubric.exists(), "the externally-authored donor rubric must ship in the repo"
+    loaded = load_rubric(rubric)
+    assert loaded.name == "donor_callback"
+    assert "donor" in loaded.domain.lower() or "volunteer" in loaded.domain.lower(), \
+        "must be a foreign (non-profit) domain, not the author's product"
+
+    with tempfile.TemporaryDirectory() as d:
+        db = str(Path(d) / "donor.db")
+        outcome = run_recovery_desk(goal, rubric, db_path=db)
+        conn = bb.connect(db)
+        snap = bb.ledger_snapshot(conn, outcome.run_id)
+        conn.close()
+
+    assert outcome.state == "shipped_pass", \
+        f"external-rubric run must ship a pass, got {outcome.state}"
+    first, last = snap["revisions"][0], snap["revisions"][-1]
+    assert not first["passed"], "must reject its own first draft on the external rubric"
+    assert last["passed"], "must ship a passing draft on the external rubric"
+    assert last["total"] > first["total"], "score must climb on the external domain"
+    f0 = {l["line_id"]: l for l in first["lines"]}
+    f1 = {l["line_id"]: l for l in last["lines"]}
+    assert f0["concrete_slot"]["points"] == 0
+    assert f1["concrete_slot"]["points"] == f1["concrete_slot"]["weight"]
+    print(f"[PASS] externally-authored rubric (donor_callback) self-failed at "
+          f"{first['total']}/100, shipped at {last['total']}/100 — zero code change")
+
+
 def test_live_claude_path_reads_fail_hints_and_revises():
     """Exercise the EXACT live-Claude code path (draft -> grade via Claude ->
     read fail hints -> revise) with the shared stub client and no API key. This
@@ -217,6 +252,7 @@ def main() -> int:
     test_offline_reviser_reads_fail_hints_not_revision_number()
     test_second_domain_self_fails_then_passes_offline()
     test_third_domain_self_fails_then_passes_offline()
+    test_external_rubric_self_fails_then_passes()
     test_live_claude_path_reads_fail_hints_and_revises()
     print("ALL RECOVERY DESK TESTS PASSED")
     return 0

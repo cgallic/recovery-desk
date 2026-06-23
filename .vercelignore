@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.db
+*.db-wal
+*.db-shm
+.env
+.venv/
+.benchmarks/
+.pytest_cache/
+node_modules/
+.git/
+demo/recovery-desk-demo.mp4

@@ -1,0 +1,200 @@
+$ python -m recovery_desk selftest
+
+================================================================
+THE RECOVERY DESK — SELFTEST
+  live Claude: OFF (offline deterministic)
+================================================================
+[PASS] stdlib-only YAML reader matches PyYAML on 4 rubrics [PyYAML present (agreement asserted)]
+BLACKBOARD SELF-TEST
+[PASS] run/draft/score/score_lines/ledger_snapshot all consistent
+[PASS] falsifiable improvement recorded (concrete_slot 0 -> 18)
+[PASS] dispatch outbox records a booked-job writeback (slot 'today 2:00 PM')
+ALL BLACKBOARD TESTS PASSED
+GRADER SELF-TEST
+  weak draft -> 33/100  passed=False
+  [PASS] weak draft fails, including concrete_slot (['callback_sla', 'concrete_slot', 'objection_handled', 'single_cta'])
+  strong draft -> 100/100  passed=True
+  [PASS] strong draft passes; concrete_slot moved 0 -> 18 (falsifiable)
+  [PASS] compliance rubric swaps in (separable rubric proven)
+ALL GRADER TESTS PASSED
+[PASS] loop self-failed at 66/100, shipped at 100/100
+[PASS] concrete_slot drove the redo: 0 -> 18
+[PASS] rubric swap works (compliance/discoverability load + score)
+[PASS] offline reviser is fail-hint driven, not a revision toggle
+[PASS] second domain (compliance) self-failed at 60/100, shipped at 100/100 offline
+[PASS] opt_out_present drove the redo: 0 -> 25
+[PASS] third domain (discoverability) self-failed at 85/100, shipped at 100/100 offline
+[PASS] single_cta drove the redo: 0 -> 15
+[PASS] externally-authored rubric (donor_callback) self-failed at 40/100, shipped at 100/100 — zero code change
+[PASS] live-Claude path verified via stub: self-failed at 82/100, shipped at 100/100, reviser read 'concrete_slot' and rewrote
+BOOKABILITY-MCP SMOKE (no transport, offline)
+  [ok] list_rubrics -> ['bookability.rubric.yaml', 'compliance.rubric.yaml', 'discoverability.rubric.yaml', 'donor_callback.rubric.yaml'] (default=bookability.rubric.yaml)
+  [ok] build_recovery -> message 23 chars + microsite
+  [ok] score_draft -> 33/100 (passed=False)
+  [ok] send_recovery -> dry-run, dispatched=False (safe default)
+  [ok] run_recovery_desk -> shipped_pass at rev 1 with 100/100
+  [ok] book_recovery -> dispatched + booked 'today 2:00 PM', writeback row in dispatch_outbox (call mc_20260707_0914)
+ALL MCP TOOL SMOKE CHECKS PASSED
+================================================================
+ALL SELFTEST ASSERTIONS PASSED
+================================================================
+
+
+$ python -m recovery_desk demo
+
+================================================================
+THE RECOVERY DESK — autonomous demo
+  goal     : recover missed call mc_20260707_0914 (Dana Whitfield)
+  rubric   : bookability.rubric.yaml
+  reasoner : offline-deterministic
+  stop when: score >= threshold  OR  revision cap reached
+================================================================
+  The human sets the goal ONCE. Everything below is the agent:
+  plan -> act -> grade ITSELF -> reject its own draft -> revise -> re-grade -> ship.
+----------------------------------------------------------------
+  [conductor] goal received (reasoner=offline-deterministic)
+  [builder]   first draft built
+  [grader]    self-scored rev 0:  66/100  [FAIL]
+  [conductor] rejecting OWN draft — failing lines: concrete_slot, objection_handled
+  [reviser]   fixing only those lines, keeping what passed
+  [builder]   revision 1 built
+  [grader]    self-scored rev 1: 100/100  [PASS]
+----------------------------------------------------------------
+  [conductor] SHIP (cleared threshold): 100/100 at rev 1
+
+Shipped recovery message:
+  Hi Dana Whitfield, sorry we missed your call about the sink backing up. We'll be in touch shortly to get you sorted. I can have someone out today 2:00 PM or today 4:30 PM. Reply with the time that works and we'll lock it in. No surprise fees - we quote upfront before any work. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+
+Shipped recovery microsite -> demo\shipped-microsite.html
+
+Recovered revenue (claimed only on a passing ship, from the business's own numbers):
+  avg job value USD 320 x recovery conversion 35% = USD 112 expected per recovered call
+
+Booked job (end-to-end writeback, not a dry-run):
+  dispatched to +1-407-555-0162 via voice-secretary-layer; booked slot 'today 2:00 PM' -> dispatch_outbox row #1 (booked=True)
+
+Run recorded in the blackboard -> recovery_desk.db (runs/drafts/scores/score_lines/log/dispatch_outbox)
+Demo complete — the loop closed with zero human touches after the goal.
+
+
+$ python -m recovery_desk demo --rubric compliance
+
+================================================================
+THE RECOVERY DESK — autonomous demo
+  goal     : recover missed call mc_20260707_0914 (Dana Whitfield)
+  rubric   : compliance.rubric.yaml
+  reasoner : offline-deterministic
+  stop when: score >= threshold  OR  revision cap reached
+================================================================
+  The human sets the goal ONCE. Everything below is the agent:
+  plan -> act -> grade ITSELF -> reject its own draft -> revise -> re-grade -> ship.
+----------------------------------------------------------------
+  [conductor] goal received (reasoner=offline-deterministic)
+  [builder]   first draft built
+  [grader]    self-scored rev 0:  60/100  [FAIL]
+  [conductor] rejecting OWN draft — failing lines: opt_out_present, single_cta
+  [reviser]   fixing only those lines, keeping what passed
+  [builder]   revision 1 built
+  [grader]    self-scored rev 1: 100/100  [PASS]
+----------------------------------------------------------------
+  [conductor] SHIP (cleared threshold): 100/100 at rev 1
+
+Shipped recovery message:
+  We'll be in touch shortly to get you sorted. Reply YES. Text STOP to unsubscribe. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+
+Shipped recovery microsite -> demo\shipped-microsite.html
+
+Recovered revenue (claimed only on a passing ship, from the business's own numbers):
+  avg job value USD 320 x recovery conversion 35% = USD 112 expected per recovered call
+
+Booked job (end-to-end writeback, not a dry-run):
+  dispatched to +1-407-555-0162 via voice-secretary-layer; booked slot 'today 2:00 PM' -> dispatch_outbox row #1 (booked=True)
+
+Run recorded in the blackboard -> recovery_desk.db (runs/drafts/scores/score_lines/log/dispatch_outbox)
+Demo complete — the loop closed with zero human touches after the goal.
+
+
+$ python -m recovery_desk demo --rubric donor_callback   # EXTERNALLY-AUTHORED rubric (foreign non-profit domain, YAML-only, zero code change)
+
+================================================================
+THE RECOVERY DESK — autonomous demo
+  goal     : recover missed call mc_20260707_0914 (Dana Whitfield)
+  rubric   : donor_callback.rubric.yaml
+  reasoner : offline-deterministic
+  stop when: score >= threshold  OR  revision cap reached
+================================================================
+  The human sets the goal ONCE. Everything below is the agent:
+  plan -> act -> grade ITSELF -> reject its own draft -> revise -> re-grade -> ship.
+----------------------------------------------------------------
+  [conductor] goal received (reasoner=offline-deterministic)
+  [builder]   first draft built
+  [grader]    self-scored rev 0:  40/100  [FAIL]
+  [conductor] rejecting OWN draft — failing lines: concrete_slot, single_cta
+  [reviser]   fixing only those lines, keeping what passed
+  [builder]   revision 1 built
+  [grader]    self-scored rev 1: 100/100  [PASS]
+----------------------------------------------------------------
+  [conductor] SHIP (cleared threshold): 100/100 at rev 1
+
+Shipped recovery message:
+  We'll be in touch shortly to get you sorted. I can have someone out today 2:00 PM or today 4:30 PM. Reply YES. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+
+Shipped recovery microsite -> demo\shipped-microsite.html
+
+Recovered revenue (claimed only on a passing ship, from the business's own numbers):
+  avg job value USD 320 x recovery conversion 35% = USD 112 expected per recovered call
+
+Booked job (end-to-end writeback, not a dry-run):
+  dispatched to +1-407-555-0162 via voice-secretary-layer; booked slot 'today 2:00 PM' -> dispatch_outbox row #1 (booked=True)
+
+Run recorded in the blackboard -> recovery_desk.db (runs/drafts/scores/score_lines/log/dispatch_outbox)
+Demo complete — the loop closed with zero human touches after the goal.
+
+
+$ python -m recovery_desk mcp-smoke
+
+BOOKABILITY-MCP SMOKE (no transport, offline)
+  [ok] list_rubrics -> ['bookability.rubric.yaml', 'compliance.rubric.yaml', 'discoverability.rubric.yaml', 'donor_callback.rubric.yaml'] (default=bookability.rubric.yaml)
+  [ok] build_recovery -> message 23 chars + microsite
+  [ok] score_draft -> 33/100 (passed=False)
+  [ok] send_recovery -> dry-run, dispatched=False (safe default)
+  [ok] run_recovery_desk -> shipped_pass at rev 1 with 100/100
+  [ok] book_recovery -> dispatched + booked 'today 2:00 PM', writeback row in dispatch_outbox (call mc_20260707_0914)
+ALL MCP TOOL SMOKE CHECKS PASSED
+
+
+$ RECOVERY_DESK_CLAUDE_CLI=1 python -m recovery_desk demo --live-cli   # REAL Claude model via Claude Code CLI (no API key) — self-fails then ships
+
+================================================================
+THE RECOVERY DESK — autonomous demo
+  goal     : recover missed call mc_20260707_0914 (Dana Whitfield)
+  rubric   : bookability.rubric.yaml
+  reasoner : claude (live)
+  stop when: score >= threshold  OR  revision cap reached
+================================================================
+  The human sets the goal ONCE. Everything below is the agent:
+  plan -> act -> grade ITSELF -> reject its own draft -> revise -> re-grade -> ship.
+----------------------------------------------------------------
+  [conductor] goal received (reasoner=claude)
+  [builder]   first draft built
+  [grader]    self-scored rev 0:  82/100  [FAIL]
+  [conductor] rejecting OWN draft — failing lines: callback_sla
+  [reviser]   fixing only those lines, keeping what passed
+  [builder]   revision 1 built
+  [grader]    self-scored rev 1:  85/100  [PASS]
+----------------------------------------------------------------
+  [conductor] SHIP (cleared threshold): 85/100 at rev 1
+
+Shipped recovery message:
+  Hi Dana, this is Bayfront Plumbing — sorry we missed your call about the kitchen sink backing up and pooling under the cabinet. A real person will call you back within the hour (we're open Mon–Sat 7–7), and we can be out today. I'm holding 2:00 PM or 4:30 PM for you, and tomorrow 9:00 AM if mornings are easier. This is a standard drain clearing call, not an after-hours emergency rate, so no surprise charges. Reply or call us back at +1-407-555-0100 and we'll lock in your time and head over. — Bayfront Plumbing
+
+Shipped recovery microsite -> demo\shipped-microsite.html
+
+Recovered revenue (claimed only on a passing ship, from the business's own numbers):
+  avg job value USD 320 x recovery conversion 35% = USD 112 expected per recovered call
+
+Booked job (end-to-end writeback, not a dry-run):
+  dispatched to +1-407-555-0162 via voice-secretary-layer; booked slot 'today 2:00 PM' -> dispatch_outbox row #1 (booked=True)
+
+Run recorded in the blackboard -> recovery_desk.db (runs/drafts/scores/score_lines/log/dispatch_outbox)
+Demo complete — the loop closed with zero human touches after the goal.

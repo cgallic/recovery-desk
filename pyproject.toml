@@ -12,19 +12,26 @@ license = { text = "MIT" }
 authors = [{ name = "Connor Gallic" }]
 keywords = ["mcp", "anthropic", "claude", "autonomous-agent", "self-evaluation", "self-improvement"]
 
-dependencies = [
-    "pyyaml>=6.0",
-    "fastapi>=0.110",
-    "uvicorn>=0.29",
-    "mcp[cli]>=1.2",
-    "anthropic>=0.40",
-]
+# The CORE (python -m recovery_desk selftest | demo) is STDLIB-ONLY. A clean
+# clone runs the full plan->act->grade->revise->ship loop with NO installs, NO
+# API key, NO network: rubric YAML is read by the vendored reader in miniyaml.py
+# when PyYAML is absent, and every external leaf (Claude, MCP transport, the web
+# UI) has an offline stub auto-selected when its library/key is missing.
+dependencies = []
 
-# Only needed to RE-RENDER the demo video from source (make video). The shipped
-# demo/recovery-desk-demo.mp4 is already in the repo, so installing these is
-# optional for judges. ffmpeg must also be on PATH for encoding.
 [project.optional-dependencies]
+# Nicer YAML errors + the live Claude reasoner + the MCP stdio transport.
+yaml = ["pyyaml>=6.0"]
+live = ["anthropic>=0.40"]
+mcp = ["mcp[cli]>=1.2"]
+# The split-screen ledger web UI (`serve`).
+server = ["fastapi>=0.110", "uvicorn>=0.29"]
+# Only needed to RE-RENDER the demo video from source (make video). The shipped
+# demo/recovery-desk-demo.mp4 is already in the repo. ffmpeg must be on PATH too.
 video = ["playwright>=1.40"]
+# Everything, for contributors.
+all = ["pyyaml>=6.0", "anthropic>=0.40", "mcp[cli]>=1.2",
+       "fastapi>=0.110", "uvicorn>=0.29", "playwright>=1.40"]
 
 [project.scripts]
 recovery-desk = "recovery_desk.run:main"

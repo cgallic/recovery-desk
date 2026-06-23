@@ -5,12 +5,13 @@ Every step of the autonomous loop is written here so the ledger UI can render th
 self-evaluation as it happens. This is the audit trail that makes "the agent
 graded itself and chose to redo it" watchable rather than narrated.
 
-Schema: 5 tables
-    runs         — one row per recovery run (goal in, terminal state out)
-    drafts       — each draft the agent produces (revision 0, 1, 2, ...)
-    scores       — the total Bookability score for each draft
-    score_lines  — per-rubric-line pass/fail/points for each draft
-    log          — chronological agent action log (planner/builder/grader/reviser)
+Schema: 6 tables
+    runs            — one row per recovery run (goal in, terminal state out)
+    drafts          — each draft the agent produces (revision 0, 1, 2, ...)
+    scores          — the total Bookability score for each draft
+    score_lines     — per-rubric-line pass/fail/points for each draft
+    log             — chronological agent action log (planner/builder/grader/reviser)
+    dispatch_outbox — real writeback when a recovery is live-dispatched/booked
 
 The pattern (SQLite blackboard + agent log + polling watcher) mirrors the-loom.
 """
@@ -134,6 +135,20 @@ CREATE TABLE IF NOT EXISTS log (
     details     TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS dispatch_outbox (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id      INTEGER REFERENCES runs(id),
+    call_id     TEXT    NOT NULL,
+    to_contact  TEXT    NOT NULL,
+    channel     TEXT    NOT NULL,
+    message     TEXT    NOT NULL,
+    booked      INTEGER NOT NULL DEFAULT 0,
+    booked_slot TEXT,
+    dispatched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_outbox_run ON dispatch_outbox(run_id);
 
 CREATE INDEX IF NOT EXISTS idx_drafts_run      ON drafts(run_id);
 CREATE INDEX IF NOT EXISTS idx_scores_run      ON scores(run_id);
@@ -317,6 +332,43 @@ def recent_log(conn: sqlite3.Connection, run_id: int, limit: int = 50) -> List[L
 
 
 # ---------------------------------------------------------------------------
+# Dispatch outbox — the real writeback when a recovery is actually sent/booked.
+#
+# A dry-run never touches this table. A live dispatch (dry_run=False) records the
+# message that went out and, when the job is booked, the slot it was booked into —
+# a falsifiable record that the end-to-end recovery happened, not just that a draft
+# scored well. This is the "booked-job writeback" the impact story needs.
+# ---------------------------------------------------------------------------
+
+def record_dispatch(
+    conn: sqlite3.Connection,
+    run_id: Optional[int],
+    call_id: str,
+    to_contact: str,
+    channel: str,
+    message: str,
+    booked: bool = False,
+    booked_slot: Optional[str] = None,
+) -> int:
+    with conn:
+        cur = conn.execute(
+            """INSERT INTO dispatch_outbox
+               (run_id, call_id, to_contact, channel, message, booked, booked_slot)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (run_id, call_id, to_contact, channel, message,
+             1 if booked else 0, booked_slot),
+        )
+        return int(cur.lastrowid)
+
+
+def get_dispatches(conn: sqlite3.Connection, run_id: int) -> List[dict]:
+    rows = conn.execute(
+        "SELECT * FROM dispatch_outbox WHERE run_id = ? ORDER BY id", (run_id,)
+    ).fetchall()
+    return [{k: r[k] for k in r.keys()} for r in rows]
+
+
+# ---------------------------------------------------------------------------
 # Ledger snapshot — exactly what the UI polls
 # ---------------------------------------------------------------------------
 
@@ -407,6 +459,15 @@ def _run_tests() -> None:
     assert r0["concrete_slot"]["points"] == 0 and r1["concrete_slot"]["points"] == 18
     print("[PASS] run/draft/score/score_lines/ledger_snapshot all consistent")
     print("[PASS] falsifiable improvement recorded (concrete_slot 0 -> 18)")
+
+    # dispatch outbox: a live send records a falsifiable booked-job writeback.
+    did = record_dispatch(conn, rid, "mc_1", "+1-407-555-0162", "voice-secretary-layer",
+                          "draft one", booked=True, booked_slot="today 2:00 PM")
+    assert did >= 1
+    outbox = get_dispatches(conn, rid)
+    assert len(outbox) == 1 and outbox[0]["booked"] == 1
+    assert outbox[0]["booked_slot"] == "today 2:00 PM"
+    print("[PASS] dispatch outbox records a booked-job writeback (slot 'today 2:00 PM')")
 
     conn.close()
     print("ALL BLACKBOARD TESTS PASSED")

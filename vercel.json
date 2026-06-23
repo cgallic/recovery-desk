@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "builds": [
+    { "src": "api/run.py", "use": "@vercel/python", "config": { "includeFiles": "{recovery_desk/**,rubrics/**,fixtures/**}" } },
+    { "src": "api/agent.py", "use": "@vercel/python", "config": { "includeFiles": "{recovery_desk/**,rubrics/**,fixtures/**}" } },
+    { "src": "public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/run", "dest": "/api/run.py" },
+    { "src": "/api/agent", "dest": "/api/agent.py" },
+    { "src": "/", "dest": "/public/index.html" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ]
+}

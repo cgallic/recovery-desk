@@ -1,13 +1,12 @@
-# Live-path run — captured transcript (stub reasoner)
+# Live Claude run — captured transcript
 
-> Reasoner: **stub stand-in** running the IDENTICAL live branch in `llm.py` with no API key. The wiring is real (the reviser turn below receives the failing rubric line id and the loop ships off the client's output — the offline deterministic repair never runs); the response prose is canned, not Claude's. A real keyed run produces this exact artifact with Claude's own text in the response blocks: `ANTHROPIC_API_KEY=sk-ant-... python -m recovery_desk.capture_live_run`.
 
-- Captured at: `2026-06-18T13:37:13.039814+00:00`
-- Reasoner: `claude-opus-4-8-stub`
+- Captured at: `2026-06-18T15:43:42.255097+00:00`
+- Reasoner: `claude-opus-4-8 (Claude Code CLI)`
 - Rubric: `bookability`  ·  threshold `85`
-- Outcome: **shipped_pass** at rev 1 with 100/100
+- Outcome: **shipped_pass** at rev 1 with 85/100
 
-Every block below is one call through the live reasoner branch of this run (stub stand-in; a real key swaps in Claude's prose). The reviser turn proves the reasoner read the failing rubric line ids (in its `user` block) and rewrote the draft itself — no deterministic repair function runs on this path.
+Every block below is a real Claude API call from this run. The reviser turn proves the reasoner read the failing rubric line ids (in its `user` block) and rewrote the draft itself — no deterministic repair function runs on this path.
 
 ## 1. DRAFTER (revision 0)
 
@@ -20,7 +19,7 @@ Return strict JSON: {"message": "...", "headline": "..."}.
 Be concrete, warm, and specific. No spam words. One clear call-to-action.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Business: {"name": "Bayfront Plumbing Co.", "phone": "+1-407-555-0100", "address": "212 Harbor Rd, Orlando, FL 32801", "sla_window": "within the hour during business hours", "hours": "Mon-Sat 7:00 AM - 7:00 PM", "services": ["drain clearing", "leak repair", "emergency call-outs"], "next_open_slots": ["today 2:00 PM", "today 4:30 PM", "tomorrow 9:00 AM"], "economics": {"avg_job_value": 320, "recovery_conversion_rate": 0.35, "currency": "USD", "note": "Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery."}}
@@ -30,10 +29,10 @@ Likely objection: Worried it'll be an expensive emergency call-out and that no o
 Write the first recovery draft.
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"message": "Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.", "headline": "Bayfront Plumbing Co. - we missed you"}
+{"message": "Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. — Bayfront Plumbing, (407) 555-0100", "headline": "Sink backing up? A Bayfront plumber can be at your door today at regular rates."}
 ```
 
 ## 2. JUDGE — line `callback_sla`
@@ -44,22 +43,22 @@ Write the first recovery draft.
 You are a strict rubric grader. Answer ONLY with JSON {"pass": true|false, "detail": "<=12 words"}.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Rubric line: callback_sla
 Pass condition: The message promises contact within the business's stated SLA window (e.g. "I'll call you back within the hour" / "before end of day").
 
 Message:
-Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. — Bayfront Plumbing, (407) 555-0100
 
 Does the message satisfy the pass condition?
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"pass": true, "detail": "ok"}
+{"pass": false, "detail": "Offers appointment times, no callback within SLA window promised"}
 ```
 
 ## 3. JUDGE — line `objection_handled`
@@ -70,22 +69,22 @@ Does the message satisfy the pass condition?
 You are a strict rubric grader. Answer ONLY with JSON {"pass": true|false, "detail": "<=12 words"}.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Rubric line: objection_handled
 Pass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.
 
 Message:
-Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. — Bayfront Plumbing, (407) 555-0100
 
 Does the message satisfy the pass condition?
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"pass": true, "detail": "ok"}
+true
 ```
 
 ## 4. REVISER (revision 1)
@@ -99,7 +98,7 @@ line that already passed exactly as it was. Each failing line names the weakness
 Return strict JSON: {"message": "...", "headline": "..."}.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Business: {"name": "Bayfront Plumbing Co.", "phone": "+1-407-555-0100", "address": "212 Harbor Rd, Orlando, FL 32801", "sla_window": "within the hour during business hours", "hours": "Mon-Sat 7:00 AM - 7:00 PM", "services": ["drain clearing", "leak repair", "emergency call-outs"], "next_open_slots": ["today 2:00 PM", "today 4:30 PM", "tomorrow 9:00 AM"], "economics": {"avg_job_value": 320, "recovery_conversion_rate": 0.35, "currency": "USD", "note": "Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery."}}
@@ -108,18 +107,18 @@ Reason: Kitchen sink backing up, water pooling under the cabinet. Asked how soon
 Open appointment slots you may offer: ["today 2:00 PM", "today 4:30 PM", "tomorrow 9:00 AM"]
 
 Your previous draft FAILED these rubric lines. Fix ONLY these; keep what passed:
-- concrete_slot: Offer a specific time, e.g. 'tomorrow at 9:00 AM or 2:00 PM.'
+- callback_sla: Add an explicit, time-bound callback promise inside the SLA window.
 
 Previous draft:
-Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. — Bayfront Plumbing, (407) 555-0100
 
 Write the revised draft.
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"message": "Hi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.", "headline": "Bayfront Plumbing Co. - same-day help"}
+{"message": "Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in — or call us at (407) 555-0100 and, during our hours (Mon–Sat 7:00 AM–7:00 PM), we'll call you back within the hour to confirm. — Bayfront Plumbing", "headline": "Bayfront Plumbing can clear your sink today at 2:00 PM — we'll confirm within the hour"}
 ```
 
 ## 5. JUDGE — line `callback_sla`
@@ -130,22 +129,22 @@ Write the revised draft.
 You are a strict rubric grader. Answer ONLY with JSON {"pass": true|false, "detail": "<=12 words"}.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Rubric line: callback_sla
 Pass condition: The message promises contact within the business's stated SLA window (e.g. "I'll call you back within the hour" / "before end of day").
 
 Message:
-Hi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in — or call us at (407) 555-0100 and, during our hours (Mon–Sat 7:00 AM–7:00 PM), we'll call you back within the hour to confirm. — Bayfront Plumbing
 
 Does the message satisfy the pass condition?
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"pass": true, "detail": "ok"}
+{"pass": true, "detail": "Promises callback within the hour during stated hours"}
 ```
 
 ## 6. JUDGE — line `objection_handled`
@@ -156,20 +155,20 @@ Does the message satisfy the pass condition?
 You are a strict rubric grader. Answer ONLY with JSON {"pass": true|false, "detail": "<=12 words"}.
 ```
 
-**User message (sent to the reasoner)**
+**User message (sent to Claude)**
 
 ```
 Rubric line: objection_handled
 Pass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.
 
 Message:
-Hi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.
+Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate — not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in — or call us at (407) 555-0100 and, during our hours (Mon–Sat 7:00 AM–7:00 PM), we'll call you back within the hour to confirm. — Bayfront Plumbing
 
 Does the message satisfy the pass condition?
 ```
 
-**Reasoner response (stub stand-in)**
+**Claude's response**
 
 ```
-{"pass": true, "detail": "ok"}
+{"pass": true, "detail": "Pre-empts surprise-fee fear: states regular rate, not emergency charge."}
 ```

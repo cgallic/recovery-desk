@@ -1,8 +1,8 @@
 {
-  "captured_at": "2026-06-18T13:37:13.038014+00:00",
-  "model": "claude-opus-4-8-stub",
-  "reasoner": "claude-live-stub",
-  "stub": true,
+  "captured_at": "2026-06-18T15:43:42.191091+00:00",
+  "model": "claude-opus-4-8 (Claude Code CLI)",
+  "reasoner": "claude-cli",
+  "stub": false,
   "rubric": "bookability",
   "transcript": [
     {
@@ -11,47 +11,47 @@
       "model": "claude-opus-4-8",
       "system": "You are the Recovery Desk drafter. A local service business missed a call.\nWrite a recovery: a short callback message (SMS/email) and a one-line site headline.\nReturn strict JSON: {\"message\": \"...\", \"headline\": \"...\"}.\nBe concrete, warm, and specific. No spam words. One clear call-to-action.",
       "user": "Business: {\"name\": \"Bayfront Plumbing Co.\", \"phone\": \"+1-407-555-0100\", \"address\": \"212 Harbor Rd, Orlando, FL 32801\", \"sla_window\": \"within the hour during business hours\", \"hours\": \"Mon-Sat 7:00 AM - 7:00 PM\", \"services\": [\"drain clearing\", \"leak repair\", \"emergency call-outs\"], \"next_open_slots\": [\"today 2:00 PM\", \"today 4:30 PM\", \"tomorrow 9:00 AM\"], \"economics\": {\"avg_job_value\": 320, \"recovery_conversion_rate\": 0.35, \"currency\": \"USD\", \"note\": \"Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery.\"}}\nCaller: Dana Whitfield (+1-407-555-0162)\nReason: Kitchen sink backing up, water pooling under the cabinet. Asked how soon someone could come out and roughly what it costs.\nLikely objection: Worried it'll be an expensive emergency call-out and that no one can come today.\nWrite the first recovery draft.",
-      "response_text": "{\"message\": \"Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\", \"headline\": \"Bayfront Plumbing Co. - we missed you\"}"
+      "response_text": "{\"message\": \"Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. \u2014 Bayfront Plumbing, (407) 555-0100\", \"headline\": \"Sink backing up? A Bayfront plumber can be at your door today at regular rates.\"}"
     },
     {
       "role": "judge",
       "line_id": "callback_sla",
       "model": "claude-opus-4-8",
       "system": "You are a strict rubric grader. Answer ONLY with JSON {\"pass\": true|false, \"detail\": \"<=12 words\"}.",
-      "user": "Rubric line: callback_sla\nPass condition: The message promises contact within the business's stated SLA window (e.g. \"I'll call you back within the hour\" / \"before end of day\").\n\nMessage:\nHi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\n\nDoes the message satisfy the pass condition?",
-      "response_text": "{\"pass\": true, \"detail\": \"ok\"}"
+      "user": "Rubric line: callback_sla\nPass condition: The message promises contact within the business's stated SLA window (e.g. \"I'll call you back within the hour\" / \"before end of day\").\n\nMessage:\nHi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. \u2014 Bayfront Plumbing, (407) 555-0100\n\nDoes the message satisfy the pass condition?",
+      "response_text": "{\"pass\": false, \"detail\": \"Offers appointment times, no callback within SLA window promised\"}"
     },
     {
       "role": "judge",
       "line_id": "objection_handled",
       "model": "claude-opus-4-8",
       "system": "You are a strict rubric grader. Answer ONLY with JSON {\"pass\": true|false, \"detail\": \"<=12 words\"}.",
-      "user": "Rubric line: objection_handled\nPass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.\n\nMessage:\nHi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\n\nDoes the message satisfy the pass condition?",
-      "response_text": "{\"pass\": true, \"detail\": \"ok\"}"
+      "user": "Rubric line: objection_handled\nPass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.\n\nMessage:\nHi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. \u2014 Bayfront Plumbing, (407) 555-0100\n\nDoes the message satisfy the pass condition?",
+      "response_text": "true"
     },
     {
       "role": "reviser",
       "revision": 1,
       "model": "claude-opus-4-8",
       "system": "You are the Recovery Desk reviser. Your previous draft was graded by a\nnumeric rubric and FAILED specific lines. Fix ONLY the lines listed as failing \u2014 keep every\nline that already passed exactly as it was. Each failing line names the weakness and the fix.\nReturn strict JSON: {\"message\": \"...\", \"headline\": \"...\"}.",
-      "user": "Business: {\"name\": \"Bayfront Plumbing Co.\", \"phone\": \"+1-407-555-0100\", \"address\": \"212 Harbor Rd, Orlando, FL 32801\", \"sla_window\": \"within the hour during business hours\", \"hours\": \"Mon-Sat 7:00 AM - 7:00 PM\", \"services\": [\"drain clearing\", \"leak repair\", \"emergency call-outs\"], \"next_open_slots\": [\"today 2:00 PM\", \"today 4:30 PM\", \"tomorrow 9:00 AM\"], \"economics\": {\"avg_job_value\": 320, \"recovery_conversion_rate\": 0.35, \"currency\": \"USD\", \"note\": \"Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery.\"}}\nCaller: Dana Whitfield\nReason: Kitchen sink backing up, water pooling under the cabinet. Asked how soon someone could come out and roughly what it costs.\nOpen appointment slots you may offer: [\"today 2:00 PM\", \"today 4:30 PM\", \"tomorrow 9:00 AM\"]\n\nYour previous draft FAILED these rubric lines. Fix ONLY these; keep what passed:\n- concrete_slot: Offer a specific time, e.g. 'tomorrow at 9:00 AM or 2:00 PM.'\n\nPrevious draft:\nHi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\n\nWrite the revised draft.",
-      "response_text": "{\"message\": \"Hi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\", \"headline\": \"Bayfront Plumbing Co. - same-day help\"}"
+      "user": "Business: {\"name\": \"Bayfront Plumbing Co.\", \"phone\": \"+1-407-555-0100\", \"address\": \"212 Harbor Rd, Orlando, FL 32801\", \"sla_window\": \"within the hour during business hours\", \"hours\": \"Mon-Sat 7:00 AM - 7:00 PM\", \"services\": [\"drain clearing\", \"leak repair\", \"emergency call-outs\"], \"next_open_slots\": [\"today 2:00 PM\", \"today 4:30 PM\", \"tomorrow 9:00 AM\"], \"economics\": {\"avg_job_value\": 320, \"recovery_conversion_rate\": 0.35, \"currency\": \"USD\", \"note\": \"Conservative figures the business supplies: a typical drain/leak call-out ticket, and the share of recovered missed calls that book when reached fast with a real slot. The agent claims revenue only on a shipped, passing recovery.\"}}\nCaller: Dana Whitfield\nReason: Kitchen sink backing up, water pooling under the cabinet. Asked how soon someone could come out and roughly what it costs.\nOpen appointment slots you may offer: [\"today 2:00 PM\", \"today 4:30 PM\", \"tomorrow 9:00 AM\"]\n\nYour previous draft FAILED these rubric lines. Fix ONLY these; keep what passed:\n- callback_sla: Add an explicit, time-bound callback promise inside the SLA window.\n\nPrevious draft:\nHi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. \u2014 Bayfront Plumbing, (407) 555-0100\n\nWrite the revised draft.",
+      "response_text": "{\"message\": \"Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in \u2014 or call us at (407) 555-0100 and, during our hours (Mon\u2013Sat 7:00 AM\u20137:00 PM), we'll call you back within the hour to confirm. \u2014 Bayfront Plumbing\", \"headline\": \"Bayfront Plumbing can clear your sink today at 2:00 PM \u2014 we'll confirm within the hour\"}"
     },
     {
       "role": "judge",
       "line_id": "callback_sla",
       "model": "claude-opus-4-8",
       "system": "You are a strict rubric grader. Answer ONLY with JSON {\"pass\": true|false, \"detail\": \"<=12 words\"}.",
-      "user": "Rubric line: callback_sla\nPass condition: The message promises contact within the business's stated SLA window (e.g. \"I'll call you back within the hour\" / \"before end of day\").\n\nMessage:\nHi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\n\nDoes the message satisfy the pass condition?",
-      "response_text": "{\"pass\": true, \"detail\": \"ok\"}"
+      "user": "Rubric line: callback_sla\nPass condition: The message promises contact within the business's stated SLA window (e.g. \"I'll call you back within the hour\" / \"before end of day\").\n\nMessage:\nHi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in \u2014 or call us at (407) 555-0100 and, during our hours (Mon\u2013Sat 7:00 AM\u20137:00 PM), we'll call you back within the hour to confirm. \u2014 Bayfront Plumbing\n\nDoes the message satisfy the pass condition?",
+      "response_text": "{\"pass\": true, \"detail\": \"Promises callback within the hour during stated hours\"}"
     },
     {
       "role": "judge",
       "line_id": "objection_handled",
       "model": "claude-opus-4-8",
       "system": "You are a strict rubric grader. Answer ONLY with JSON {\"pass\": true|false, \"detail\": \"<=12 words\"}.",
-      "user": "Rubric line: objection_handled\nPass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.\n\nMessage:\nHi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.\n\nDoes the message satisfy the pass condition?",
-      "response_text": "{\"pass\": true, \"detail\": \"ok\"}"
+      "user": "Rubric line: objection_handled\nPass condition: The caller's likely top objection (inferred from the call reason) is pre-answered in one line.\n\nMessage:\nHi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in \u2014 or call us at (407) 555-0100 and, during our hours (Mon\u2013Sat 7:00 AM\u20137:00 PM), we'll call you back within the hour to confirm. \u2014 Bayfront Plumbing\n\nDoes the message satisfy the pass condition?",
+      "response_text": "{\"pass\": true, \"detail\": \"Pre-empts surprise-fee fear: states regular rate, not emergency charge.\"}"
     }
   ],
   "ledger": {
@@ -60,36 +60,36 @@
     "rubric": "bookability",
     "threshold": 85,
     "state": "shipped_pass",
-    "final_score": 100,
+    "final_score": 85,
     "final_revision": 1,
     "revisions": [
       {
         "revision": 0,
         "total": 82,
         "passed": false,
-        "message": "Hi Dana Whitfield, sorry we missed your call. We will be in touch shortly. Reply and let us know when works for you. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.",
-        "site_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Bayfront Plumbing Co. \u2014 Recovery</title>\n<style>\n  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0f1115; color:#e8edf2; }\n  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px; }\n  h1 { font-size: 28px; margin: 0 0 8px; color:#5ad19a; }\n  .lead { font-size: 17px; line-height: 1.5; color:#c4cdd6; }\n  .nap { margin-top: 24px; font-size: 14px; color:#8a95a1; }\n  .cta { display:inline-block; margin-top: 28px; background:#5ad19a; color:#0f1115;\n          font-weight:700; padding:14px 26px; border-radius:10px; text-decoration:none; }\n  .proof { margin-top: 18px; font-size: 13px; color:#8a95a1; }\n</style>\n</head>\n<body>\n  <div class=\"wrap\">\n    <h1>Bayfront Plumbing Co. - we missed you</h1>\n    <p class=\"lead\">Sorry we missed you. We can still get you booked today \u2014 the fastest way is a quick call back.</p>\n    <p class=\"proof\">Hundreds of jobs booked from missed calls.</p>\n    <a class=\"cta\" href=\"tel:+14075550100\">Call us</a>\n    <p class=\"nap\">Bayfront Plumbing Co. &middot; 212 Harbor Rd, Orlando, FL 32801 &middot; +1-407-555-0100</p>\n  </div>\n</body>\n</html>",
+        "message": "Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in. \u2014 Bayfront Plumbing, (407) 555-0100",
+        "site_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Bayfront Plumbing Co. \u2014 Recovery</title>\n<style>\n  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0f1115; color:#e8edf2; }\n  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px; }\n  h1 { font-size: 28px; margin: 0 0 8px; color:#5ad19a; }\n  .lead { font-size: 17px; line-height: 1.5; color:#c4cdd6; }\n  .nap { margin-top: 24px; font-size: 14px; color:#8a95a1; }\n  .cta { display:inline-block; margin-top: 28px; background:#5ad19a; color:#0f1115;\n          font-weight:700; padding:14px 26px; border-radius:10px; text-decoration:none; }\n  .proof { margin-top: 18px; font-size: 13px; color:#8a95a1; }\n</style>\n</head>\n<body>\n  <div class=\"wrap\">\n    <h1>Sink backing up? A Bayfront plumber can be at your door today at regular rates.</h1>\n    <p class=\"lead\">Sorry we missed you. We can still get you booked today \u2014 the fastest way is a quick call back.</p>\n    <p class=\"proof\">Hundreds of jobs booked from missed calls.</p>\n    <a class=\"cta\" href=\"tel:+14075550100\">Call us</a>\n    <p class=\"nap\">Bayfront Plumbing Co. &middot; 212 Harbor Rd, Orlando, FL 32801 &middot; +1-407-555-0100</p>\n  </div>\n</body>\n</html>",
         "lines": [
           {
             "line_id": "callback_sla",
             "weight": 18,
-            "points": 18,
-            "passed": true,
-            "detail": "ok"
+            "points": 0,
+            "passed": false,
+            "detail": "Offers appointment times, no callback within SLA window promised"
           },
           {
             "line_id": "concrete_slot",
             "weight": 18,
-            "points": 0,
-            "passed": false,
-            "detail": "no specific time offered (only a vague 'let us know')"
+            "points": 18,
+            "passed": true,
+            "detail": "specific slot offered: '2:00 PM'"
           },
           {
             "line_id": "objection_handled",
             "weight": 16,
             "points": 16,
             "passed": true,
-            "detail": "ok"
+            "detail": "top objection pre-answered"
           },
           {
             "line_id": "contact_correct",
@@ -116,17 +116,17 @@
       },
       {
         "revision": 1,
-        "total": 100,
+        "total": 85,
         "passed": true,
-        "message": "Hi Dana Whitfield, sorry we missed your call about the kitchen sink. I can have a tech out today at 2:00 PM or tomorrow at 9:00 AM. No surprise fees - we quote upfront. Reply with the time that works and I'll call you back within the hour. Bayfront Plumbing Co., 212 Harbor Rd, Orlando, FL 32801, +1-407-555-0100.",
-        "site_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Bayfront Plumbing Co. \u2014 Recovery</title>\n<style>\n  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0f1115; color:#e8edf2; }\n  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px; }\n  h1 { font-size: 28px; margin: 0 0 8px; color:#5ad19a; }\n  .lead { font-size: 17px; line-height: 1.5; color:#c4cdd6; }\n  .nap { margin-top: 24px; font-size: 14px; color:#8a95a1; }\n  .cta { display:inline-block; margin-top: 28px; background:#5ad19a; color:#0f1115;\n          font-weight:700; padding:14px 26px; border-radius:10px; text-decoration:none; }\n  .proof { margin-top: 18px; font-size: 13px; color:#8a95a1; }\n</style>\n</head>\n<body>\n  <div class=\"wrap\">\n    <h1>Bayfront Plumbing Co. - same-day help</h1>\n    <p class=\"lead\">Sorry we missed you. We can still get you booked today \u2014 the fastest way is a quick call back.</p>\n    <p class=\"proof\">Hundreds of jobs booked from missed calls.</p>\n    <a class=\"cta\" href=\"tel:+14075550100\">Call us</a>\n    <p class=\"nap\">Bayfront Plumbing Co. &middot; 212 Harbor Rd, Orlando, FL 32801 &middot; +1-407-555-0100</p>\n  </div>\n</body>\n</html>",
+        "message": "Hi Dana, this is Bayfront Plumbing Co. returning your call about the kitchen sink backing up with water pooling under the cabinet. Good news: we can get a technician to the 212 Harbor Rd area today at 2:00 PM (or 4:30 PM if that's better), and this is a standard drain-clearing visit at our regular rate \u2014 not an after-hours emergency charge. To stop water from spreading, clear out the cabinet and avoid running that sink until we arrive. Reply with the time that works and we'll lock it in \u2014 or call us at (407) 555-0100 and, during our hours (Mon\u2013Sat 7:00 AM\u20137:00 PM), we'll call you back within the hour to confirm. \u2014 Bayfront Plumbing",
+        "site_html": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Bayfront Plumbing Co. \u2014 Recovery</title>\n<style>\n  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; margin:0; background:#0f1115; color:#e8edf2; }\n  .wrap { max-width: 560px; margin: 0 auto; padding: 40px 24px; }\n  h1 { font-size: 28px; margin: 0 0 8px; color:#5ad19a; }\n  .lead { font-size: 17px; line-height: 1.5; color:#c4cdd6; }\n  .nap { margin-top: 24px; font-size: 14px; color:#8a95a1; }\n  .cta { display:inline-block; margin-top: 28px; background:#5ad19a; color:#0f1115;\n          font-weight:700; padding:14px 26px; border-radius:10px; text-decoration:none; }\n  .proof { margin-top: 18px; font-size: 13px; color:#8a95a1; }\n</style>\n</head>\n<body>\n  <div class=\"wrap\">\n    <h1>Bayfront Plumbing can clear your sink today at 2:00 PM \u2014 we&#x27;ll confirm within the hour</h1>\n    <p class=\"lead\">Sorry we missed you. We can still get you booked today \u2014 the fastest way is a quick call back.</p>\n    <p class=\"proof\">Hundreds of jobs booked from missed calls.</p>\n    <a class=\"cta\" href=\"tel:+14075550100\">Call us</a>\n    <p class=\"nap\">Bayfront Plumbing Co. &middot; 212 Harbor Rd, Orlando, FL 32801 &middot; +1-407-555-0100</p>\n  </div>\n</body>\n</html>",
         "lines": [
           {
             "line_id": "callback_sla",
             "weight": 18,
             "points": 18,
             "passed": true,
-            "detail": "ok"
+            "detail": "Promises callback within the hour during stated hours"
           },
           {
             "line_id": "concrete_slot",
@@ -140,7 +140,7 @@
             "weight": 16,
             "points": 16,
             "passed": true,
-            "detail": "ok"
+            "detail": "Pre-empts surprise-fee fear: states regular rate, not emergency charge."
           },
           {
             "line_id": "contact_correct",
@@ -152,9 +152,9 @@
           {
             "line_id": "single_cta",
             "weight": 15,
-            "points": 15,
-            "passed": true,
-            "detail": "exactly one CTA ('reply')"
+            "points": 0,
+            "passed": false,
+            "detail": "3 competing CTAs: ['call us', 'confirm', 'reply']"
           },
           {
             "line_id": "no_spam_words",
@@ -170,52 +170,52 @@
       {
         "actor": "Conductor",
         "action": "goal received",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:02"
       },
       {
         "actor": "Planner",
         "action": "drafting recovery",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:02"
       },
       {
         "actor": "Builder",
         "action": "recovery built",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:23"
       },
       {
         "actor": "Grader",
         "action": "self-scored 82/100",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:52"
       },
       {
         "actor": "Conductor",
         "action": "score 82 < threshold 85 \u2014 rejecting own draft, revising",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:52"
       },
       {
         "actor": "Planner",
         "action": "revising failing lines",
-        "at": "2026-06-18 13:37:12"
+        "at": "2026-06-18 15:42:52"
       },
       {
         "actor": "Builder",
         "action": "recovery built",
-        "at": "2026-06-18 13:37:13"
+        "at": "2026-06-18 15:43:14"
       },
       {
         "actor": "Grader",
-        "action": "self-scored 100/100",
-        "at": "2026-06-18 13:37:13"
+        "action": "self-scored 85/100",
+        "at": "2026-06-18 15:43:42"
       },
       {
         "actor": "Conductor",
-        "action": "score 100 >= threshold 85 \u2014 shipping",
-        "at": "2026-06-18 13:37:13"
+        "action": "score 85 >= threshold 85 \u2014 shipping",
+        "at": "2026-06-18 15:43:42"
       }
     ],
     "outcome": {
       "state": "shipped_pass",
-      "final_score": 100,
+      "final_score": 85,
       "final_revision": 1,
       "impact": {
         "avg_job_value": 320.0,
